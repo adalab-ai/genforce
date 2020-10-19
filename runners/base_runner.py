@@ -57,8 +57,9 @@ class BaseRunner(object):
         with open(os.path.join(self.work_dir, 'config.json'), 'w') as f:
             json.dump(self.config, f, indent=4)
 
-        self._rank = dist.get_rank()
-        self._world_size = dist.get_world_size()
+        self._rank = 0#dist.get_rank()
+        self._world_size = 1#dist.get_world_size()
+        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
         self.batch_size = self.config.batch_size
         self.val_batch_size = self.config.get('val_batch_size', self.batch_size)
@@ -166,7 +167,7 @@ class BaseRunner(object):
         for module, module_config in self.config.modules.items():
             model_config = module_config['model']
             self.models[module] = build_model(module=module, **model_config)
-            self.models[module].cuda()
+            self.models[module].to(self.device)
             opt_config[module] = module_config.get('opt', None)
             lr_config[module] = module_config.get('lr', None)
         build_optimizers(opt_config, self)
@@ -229,7 +230,7 @@ class BaseRunner(object):
     def cuda(self):
         """Puts models to CUDA."""
         for name in self.models:
-            self.models[name].cuda()
+            self.models[name].to(self.device)
 
     def set_model_requires_grad(self, name, requires_grad):
         """Sets the `requires_grad` configuration for a particular model."""
@@ -265,7 +266,7 @@ class BaseRunner(object):
     def train(self, **train_kwargs):
         """Training function."""
         self.set_mode('train')
-        self.distribute()
+        #self.distribute()
         self.build_dataset('train')
         self.build_loss()
 
@@ -282,8 +283,8 @@ class BaseRunner(object):
             self.timer.pre_execute(self)
             for key in data_batch:
                 assert data_batch[key].shape[0] == self.batch_size
-                data_batch[key] = data_batch[key].cuda(
-                    torch.cuda.current_device(), non_blocking=True)
+                data_batch[key] = data_batch[key].to(self.device)#.cuda(
+                    #torch.cuda.current_device(), non_blocking=True)
             self.train_step(data_batch, **train_kwargs)
             self.seen_img += self.batch_size * self.world_size
             self.timer.post_execute(self)
@@ -358,7 +359,7 @@ class BaseRunner(object):
         self.logger.info(f'Resuming from checkpoint `{filepath}` ...')
         if not os.path.isfile(filepath):
             raise IOError(f'Checkpoint `{filepath}` does not exist!')
-        device = torch.cuda.current_device()
+        device = self.device()#torch.cuda.current_device()
         map_location = lambda storage, location: storage.cuda(device)
         checkpoint = torch.load(filepath, map_location=map_location)
         # Load models.

@@ -78,12 +78,14 @@ def progressive_resize_image(image, size):
     height, width, channel = image.shape
     assert height == width
     assert height >= size
+    
     num_iters = int(np.log2(height) - np.log2(size))
     for _ in range(num_iters):
         height = max(height // 2, size)
         image = cv2.resize(image, (height, height),
                            interpolation=cv2.INTER_LINEAR)
-    assert image.shape == (size, size, channel)
+    image.resize(size, size, channel)
+    assert image.shape == (size, size, channel), f"Image shape is: {image.shape} Desired shape is: ({size}, {size}, {channel})"
     return image
 
 

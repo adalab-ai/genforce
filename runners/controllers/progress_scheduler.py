@@ -6,6 +6,7 @@ the batch size, learning rate, etc.
 """
 
 import numpy as np
+from tqdm import tqdm
 
 from .base_controller import BaseController
 

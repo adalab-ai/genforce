@@ -83,18 +83,18 @@ def main():
 
     # Set launcher.
     config.is_distributed = True
-    init_dist(config.launcher, backend=config.backend)
-    config.num_gpus = dist.get_world_size()
+    #init_dist(config.launcher, backend=config.backend)
+    config.num_gpus = 0#dist.get_world_size()
 
     # Setup logger.
-    if dist.get_rank() == 0:
-        logger_type = config.get('logger_type', 'normal')
-        logger = build_logger(logger_type, work_dir=config.work_dir)
-        shutil.copy(args.config, os.path.join(config.work_dir, 'config.py'))
-        commit_id = os.popen('git rev-parse HEAD').readline()
-        logger.info(f'Commit ID: {commit_id}')
-    else:
-        logger = build_logger('dumb', work_dir=config.work_dir)
+    #if dist.get_rank() == 0:
+    logger_type = config.get('logger_type', 'normal')
+    logger = build_logger(logger_type, work_dir=config.work_dir)
+    shutil.copy(args.config, os.path.join(config.work_dir, 'config.py'))
+    commit_id = os.popen('git rev-parse HEAD').readline()
+    logger.info(f'Commit ID: {commit_id}')
+    #else:
+    #    logger = build_logger('dumb', work_dir=config.work_dir)
 
     # Start training.
     runner = getattr(runners, config.runner_type)(config, logger)

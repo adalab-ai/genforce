@@ -42,6 +42,7 @@ class ZipLoader(object):
     def get_image(file_path, image_path):
         """Decodes an image from a particular zip file."""
         zip_file = ZipLoader.get_zipfile(file_path)
+        print("Image path: ", image_path)
         image_str = zip_file.read(image_path)
         image_np = np.frombuffer(image_str, np.uint8)
         image = cv2.imdecode(image_np, cv2.IMREAD_COLOR)
